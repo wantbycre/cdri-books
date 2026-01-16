@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { cartContentAtom } from "@/store/bookAtom";
 import { useAtom } from "jotai";
 import Books from "@/components/ui/books";
@@ -20,7 +21,20 @@ const Cart = () => {
                     건
                 </span>
             </section>
-            <Books contents={cartStorage} />
+            {!cartStorage || cartStorage.length === 0 ? (
+                <section className="text-center mt-40">
+                    <Image
+                        src="/emp-book.svg"
+                        width={80}
+                        height={80}
+                        alt="찜한 책이 없습니다."
+                        className="m-auto"
+                    />
+                    <p className="text-secondary mt-10">찜한 책이 없습니다.</p>
+                </section>
+            ) : (
+                <Books contents={cartStorage} />
+            )}
         </article>
     );
 };

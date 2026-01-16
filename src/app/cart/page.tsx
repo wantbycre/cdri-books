@@ -1,11 +1,7 @@
 import Cart from "./Cart";
 
 const CartPage = () => {
-    return (
-        <>
-            <Cart />
-        </>
-    );
+    return <Cart />;
 };
 
 export default CartPage;
