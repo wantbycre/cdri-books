@@ -1,9 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useRef, use } from "react";
-import { useBookSearch } from "@/hooks/useBooks";
-
+import { useEffect, useState, useRef } from "react";
 import { SearchType } from "@/types/book";
 import {
     Select,
@@ -14,42 +12,39 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useAtom } from "jotai";
-import { searchResultAtom, searchKeywordAtom } from "@/store/bookAtom";
+import { searchKeywordAtom } from "@/store/bookAtom";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const BooksSearch = () => {
-    const inputRef = useRef<HTMLInputElement>(null); // input focus
-    const [word, setWord] = useState(""); // input 타이핑
-    const [searchWord, setSearchWord] = useState(""); // 검색
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const inputRef = useRef<HTMLInputElement>(null);
+    
+    // URL에서 현재 검색어와 타입 가져오기
+    const currentQuery = searchParams.get("q") || "";
+    const currentType = (searchParams.get("type") as SearchType) || "title";
+    
+    const [word, setWord] = useState(currentQuery); // input 타이핑
     const [wordLayer, setWordLayer] = useState(false); // 검색 기록
-    const [type, setType] = useState<SearchType>("title"); // query 전달 타입
+    const [type, setType] = useState<SearchType>(currentType); // query 전달 타입
 
     const [modal, setModal] = useState(false); // 모달
     const [modalType, setModalType] = useState<SearchType>("title"); // 모달 타입
     const [isMounted, setIsMounted] = useState(false); // ssr 하이디렉션 충돌 방지
     const [modalWord, setModalWord] = useState(""); // 모달 타이핑
 
-    const [searchStatus, setSearchStatus] = useAtom(searchResultAtom);
     const [wordStorage, setWordStorage] = useAtom(searchKeywordAtom);
 
-    // kakao api
-    const { data, isLoading, isError } = useBookSearch({
-        query: searchWord,
-        target: type,
-    });
+    // URL 파라미터 변경 시 input 업데이트
+    useEffect(() => {
+        setWord(currentQuery);
+        setType(currentType);
+    }, [currentQuery, currentType]);
 
     // ssr 하이디렉션 충돌 방지
     useEffect(() => {
         setIsMounted(true);
     }, []);
-
-    // jotai atom 저장
-    useEffect(() => {
-        setSearchStatus({
-            contents: data?.documents,
-            isLoading,
-            isError,
-        });
-    }, [data, isLoading, isError, setSearchStatus]);
 
     // 외부 클릭시 닫기
     const handleBlur = (e: React.FocusEvent) => {
@@ -78,7 +73,6 @@ const BooksSearch = () => {
     // 검색기록
     const handleWordLayerClick = (word: string) => {
         setWord(word);
-        setSearchWord(word);
         setWordLayer(false);
 
         const newHistory = [
@@ -87,6 +81,9 @@ const BooksSearch = () => {
         ].slice(0, 8);
 
         setWordStorage(newHistory);
+        
+        // URL 업데이트하여 서버에서 데이터 페칭
+        router.push(`/book?q=${word}&type=${type}`);
     };
 
     // 검색기록 삭제
@@ -116,8 +113,8 @@ const BooksSearch = () => {
 
         if (!word.trim()) return;
 
-        // 검색
-        setSearchWord(word);
+        // URL 업데이트하여 서버에서 데이터 페칭
+        router.push(`/book?q=${word}&type=${type}`);
 
         // 키워드 레이어
         setWordLayer(false);
@@ -142,9 +139,8 @@ const BooksSearch = () => {
         setWord("");
         setModal(false);
 
-        // 검색
-        setType(modalType);
-        setSearchWord(modalWord);
+        // URL 업데이트하여 서버에서 데이터 페칭
+        router.push(`/book?q=${modalWord}&type=${modalType}`);
     };
 
     // console.log(data?.documents);
@@ -227,7 +223,7 @@ const BooksSearch = () => {
                                         className="border-b border-primary w-full h-8"
                                         value={modalWord}
                                         onChange={(e) =>
-                                            setModalWord(e.target.value)
+                                            setModalWord(e.currentTarget.value)
                                         }
                                     />
                                 </div>

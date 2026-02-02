@@ -1,13 +1,33 @@
 "use client";
 
 import Image from "next/image";
-import { useAtom } from "jotai";
-import { searchResultAtom } from "@/store/bookAtom";
+import { useBookSearch } from "@/hooks/useBooks";
 import Books from "@/components/ui/books";
+import { KakaoBookResponse } from "@/types/book";
+import { SearchType } from "@/types/book";
 
-const BooksList = () => {
-    // atom data
-    const [{ contents, isError }] = useAtom(searchResultAtom);
+interface BooksListProps {
+    initialData: KakaoBookResponse | null;
+    initialError: boolean;
+    searchQuery: string;
+    searchType: SearchType;
+}
+
+const BooksList = ({ 
+    initialData, 
+    initialError, 
+    searchQuery, 
+    searchType 
+}: BooksListProps) => {
+    // react-query는 캐시 및 클라이언트 사이드 업데이트용
+    const { data, isError } = useBookSearch({
+        query: searchQuery,
+        target: searchType,
+    }, initialData);
+
+    // SSR 데이터 또는 react-query 캐시 데이터 사용
+    const contents = data?.documents || initialData?.documents || [];
+    const error = isError || initialError;
 
     return (
         <article>
@@ -22,7 +42,7 @@ const BooksList = () => {
                 </span>
             </section>
 
-            {isError ? (
+            {error ? (
                 <section className="text-center mt-40">
                     <Image
                         src="/emp-book.svg"

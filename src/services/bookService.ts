@@ -1,8 +1,8 @@
 import { SearchParams } from "@/types/book";
 
 const KAKAO_URL = "https://dapi.kakao.com/v3/search/book";
-const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY;
 
+// 서버 사이드 전용 함수 (SSR만 사용)
 export const fetchBooks = async ({
     query,
     target,
@@ -10,6 +10,13 @@ export const fetchBooks = async ({
     size = 10,
 }: SearchParams) => {
     if (!query) return null;
+
+    // 서버 사이드에서만 사용되는 API 키
+    const KAKAO_KEY = process.env.KAKAO_REST_API_KEY;
+    
+    if (!KAKAO_KEY) {
+        throw new Error("Kakao API Key is not configured");
+    }
 
     const params = new URLSearchParams({
         query,
@@ -26,6 +33,7 @@ export const fetchBooks = async ({
         headers: {
             Authorization: `KakaoAK ${KAKAO_KEY}`,
         },
+        cache: "no-store", // SSR 캐시 설정
     });
 
     if (!res.ok) throw new Error("도서 데이터를 불러오는 데 실패했습니다.");
